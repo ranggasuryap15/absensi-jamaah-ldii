@@ -1,57 +1,58 @@
-# ui_components.py
-import flet as ft
+import customtkinter as ctk
 
-def get_header():
-    return ft.Container(
-        content=ft.Column([
-            ft.Text("Sistem Absensi LDII", size=28, weight="bold", color="blue"),
-            ft.Text("Hybrid Scan: USB & Camera", size=14, color="grey"),
-            ft.Divider()
-        ])
+def create_header(parent):
+    frame = ctk.CTkFrame(parent, fg_color="transparent")
+    lbl_title = ctk.CTkLabel(frame, text="ABSENSI JAMAAH", font=ctk.CTkFont(size=24, weight="bold"), text_color="#ffffff")
+    lbl_title.pack(pady=(20, 5))
+    lbl_subtitle = ctk.CTkLabel(frame, text="Scan QR / Barcode Mode", font=ctk.CTkFont(size=12), text_color="gray")
+    lbl_subtitle.pack(pady=(0, 20))
+    return frame
+
+def create_input_group(parent, label_text, placeholder, on_enter_callback=None):
+    lbl = ctk.CTkLabel(parent, text=label_text, anchor="w")
+    lbl.pack(padx=20, pady=(10, 0), fill="x")
+    entry = ctk.CTkEntry(parent, placeholder_text=placeholder)
+    entry.pack(padx=20, pady=5, fill="x")
+    if on_enter_callback:
+        entry.bind("<Return>", on_enter_callback)
+    return entry
+
+def create_dropdown_status(parent):
+    lbl = ctk.CTkLabel(parent, text="Status Kehadiran:", anchor="w")
+    lbl.pack(padx=20, pady=(10, 0), fill="x")
+    dropdown = ctk.CTkOptionMenu(parent, values=["Hadir", "Izin", "Sakit", "Alfa"], fg_color="#1f6aa5", button_color="#144870")
+    dropdown.pack(padx=20, pady=5, fill="x")
+    return dropdown
+
+def create_btn_simpan(parent, command):
+    btn = ctk.CTkButton(parent, text="Simpan Manual", command=command, fg_color="green", hover_color="#006400")
+    btn.pack(padx=20, pady=20, fill="x")
+    return btn
+
+def create_log_box(parent):
+    log_box = ctk.CTkTextbox(parent, height=150)
+    log_box.pack(padx=20, pady=(10, 20), fill="both", expand=True)
+    return log_box
+
+def create_camera_preview(parent):
+    """
+    Area Kamera.
+    Kita set ukuran 0,0 agar dia mengikuti ukuran container induknya (responsive).
+    """
+    label = ctk.CTkLabel(
+        parent, 
+        text="Kamera Mati", 
+        font=ctk.CTkFont(size=20),
+        fg_color="black", 
+        corner_radius=10,
+        width=0, # Responsive
+        height=0 # Responsive
     )
+    # Gunakan sticky nsew di main.py nanti, disini pack expand true
+    label.pack(expand=True, fill="both", padx=10, pady=10)
+    return label
 
-def get_input_usb(on_submit_func):
-    return ft.TextField(
-        label="Klik disini untuk Scan USB",
-        autofocus=True,
-        prefix_icon=ft.icons.KEYBOARD,
-        on_submit=on_submit_func,
-        text_size=16
-    )
-
-def get_dropdown_jadwal(data_jadwal, on_change_func):
-    opsi = []
-    for row in data_jadwal:
-        # row[0]=ID, row[1]=Nama, row[2]=Tanggal
-        label = f"{row[1]} ({row[2]})"
-        opsi.append(ft.dropdown.Option(key=row[0], text=label))
+def create_btn_toggle_cam(parent, command):
+    btn = ctk.CTkButton(parent, text="Nyalakan Kamera", command=command, height=50, font=ctk.CTkFont(size=16, weight="bold"), fg_color="#1f6aa5")
     
-    return ft.Dropdown(
-        label="Pilih Jadwal Pengajian",
-        options=opsi,
-        on_change=on_change_func,
-        width=400
-    )
-
-def get_status_box():
-    status_txt = ft.Text("Siap Scan...", size=20, weight="bold")
-    detail_txt = ft.Text("-", size=16)
-    
-    container = ft.Container(
-        content=ft.Column([status_txt, detail_txt], horizontal_alignment="center"),
-        padding=20,
-        bgcolor=ft.colors.BLUE_50,
-        border_radius=10,
-        width=400,
-        alignment=ft.alignment.center
-    )
-    return container, status_txt, detail_txt
-
-def get_image_control():
-    return ft.Image(
-        src_base64="",
-        width=640,
-        height=480,
-        fit=ft.ImageFit.CONTAIN,
-        border_radius=10
-    )
+    return btn

@@ -97,6 +97,33 @@ def get_all_jamaah():
         return [d for d in data if str(d.get('status')).lower() == 'aktif']
     except:
         return []
+    
+def get_all_jamaah_dict():
+    """
+    Mengambil semua data jamaah dan menjadikannya Dictionary.
+    Format: {'123': 'Budi Santoso', '124': 'Agus'}
+    Gunanya biar pencarian nama INSTANT tanpa loading internet.
+    """
+    sh = connect_db()
+    if not sh: return {}
+
+    try:
+        wks = sh.worksheet("MASTER_JAMAAH")
+        data = wks.get_all_records()
+        
+        # Bikin kamus {id: nama}
+        cache_data = {}
+        for row in data:
+            # Pastikan ID jadi string biar cocok sama QR Code
+            id_jam = str(row.get('id_jamaah'))
+            nama = row.get('nama_lengkap')
+            cache_data[id_jam] = nama
+            
+        print(f"✅ Cache Loaded: {len(cache_data)} Jamaah")
+        return cache_data
+    except Exception as e:
+        print(f"❌ Gagal Load Cache: {e}")
+        return {}
 
 def input_absensi(id_jamaah, status_kehadiran, keterangan_input=""):
     """
