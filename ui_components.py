@@ -1,58 +1,113 @@
 import customtkinter as ctk
+import tkinter as tk # Wajib untuk layar kamera stabil
 
-def create_header(parent):
-    frame = ctk.CTkFrame(parent, fg_color="transparent")
-    lbl_title = ctk.CTkLabel(frame, text="ABSENSI JAMAAH", font=ctk.CTkFont(size=24, weight="bold"), text_color="#ffffff")
-    lbl_title.pack(pady=(20, 5))
-    lbl_subtitle = ctk.CTkLabel(frame, text="Scan QR / Barcode Mode", font=ctk.CTkFont(size=12), text_color="gray")
-    lbl_subtitle.pack(pady=(0, 20))
-    return frame
+class MainUI:
+    def __init__(self, root):
+        self.root = root
+        
+        # --- KONFIGURASI GRID UTAMA ---
+        self.root.grid_columnconfigure(0, weight=0) # Sidebar
+        self.root.grid_columnconfigure(1, weight=1) # Main Area
+        self.root.grid_rowconfigure(0, weight=1)
 
-def create_input_group(parent, label_text, placeholder, on_enter_callback=None):
-    lbl = ctk.CTkLabel(parent, text=label_text, anchor="w")
-    lbl.pack(padx=20, pady=(10, 0), fill="x")
-    entry = ctk.CTkEntry(parent, placeholder_text=placeholder)
-    entry.pack(padx=20, pady=5, fill="x")
-    if on_enter_callback:
-        entry.bind("<Return>", on_enter_callback)
-    return entry
+        self.setup_sidebar()
+        self.setup_main_area()
 
-def create_dropdown_status(parent):
-    lbl = ctk.CTkLabel(parent, text="Status Kehadiran:", anchor="w")
-    lbl.pack(padx=20, pady=(10, 0), fill="x")
-    dropdown = ctk.CTkOptionMenu(parent, values=["Hadir", "Izin", "Sakit", "Alfa"], fg_color="#1f6aa5", button_color="#144870")
-    dropdown.pack(padx=20, pady=5, fill="x")
-    return dropdown
+    def setup_sidebar(self):
+        # Frame Sidebar
+        self.sidebar = ctk.CTkFrame(self.root, width=300, corner_radius=0)
+        self.sidebar.grid(row=0, column=0, sticky="nsew")
+        self.sidebar.grid_propagate(False)
 
-def create_btn_simpan(parent, command):
-    btn = ctk.CTkButton(parent, text="Simpan Manual", command=command, fg_color="green", hover_color="#006400")
-    btn.pack(padx=20, pady=20, fill="x")
-    return btn
+        # Header
+        ctk.CTkLabel(self.sidebar, text="KONTROL PANEL", font=("Arial", 20, "bold"), text_color="#3B8ED0").pack(pady=(20, 10))
 
-def create_log_box(parent):
-    log_box = ctk.CTkTextbox(parent, height=150)
-    log_box.pack(padx=20, pady=(10, 20), fill="both", expand=True)
-    return log_box
+        # A. Input ID
+        ctk.CTkLabel(self.sidebar, text="ID Jamaah:", anchor="w").pack(fill="x", padx=20, pady=(10,0))
+        self.entry_id = ctk.CTkEntry(self.sidebar, placeholder_text="Scan / Ketik...", height=40, font=("Arial", 14))
+        self.entry_id.pack(fill="x", padx=20, pady=(5, 10))
 
-def create_camera_preview(parent):
-    """
-    Area Kamera.
-    Kita set ukuran 0,0 agar dia mengikuti ukuran container induknya (responsive).
-    """
-    label = ctk.CTkLabel(
-        parent, 
-        text="Kamera Mati", 
-        font=ctk.CTkFont(size=20),
-        fg_color="black", 
-        corner_radius=10,
-        width=0, # Responsive
-        height=0 # Responsive
-    )
-    # Gunakan sticky nsew di main.py nanti, disini pack expand true
-    label.pack(expand=True, fill="both", padx=10, pady=10)
-    return label
+        # # B. Kegiatan (Auto)
+        # ctk.CTkLabel(self.sidebar, text="Kegiatan (Auto Jadwal):", anchor="w").pack(fill="x", padx=20, pady=(5,0))
+        # self.entry_kegiatan = ctk.CTkEntry(
+        #     self.sidebar,
+        #     placeholder_text="Memuat Jadwal...",
+        #     height=40,
+        #     font=("Arial", 13, "bold"),
+        #     fg_color="#2b2b2b", # Read Only Style
+        #     text_color="#ffd700"
+        # )
+        # self.entry_kegiatan.pack(fill="x", padx=20, pady=(5, 10))
+        # self.entry_kegiatan.configure(state="disabled")
 
-def create_btn_toggle_cam(parent, command):
-    btn = ctk.CTkButton(parent, text="Nyalakan Kamera", command=command, height=50, font=ctk.CTkFont(size=16, weight="bold"), fg_color="#1f6aa5")
-    
-    return btn
+        # C. Status
+        ctk.CTkLabel(self.sidebar, text="Status Kehadiran:", anchor="w").pack(fill="x", padx=20, pady=(5,0))
+        self.status_var = ctk.StringVar(value="Hadir")
+        self.seg_status = ctk.CTkSegmentedButton(
+            self.sidebar, 
+            values=["Hadir", "Izin", "Sakit", "Alfa"],
+            variable=self.status_var,
+            height=40,
+            font=("Arial", 13, "bold"),
+            selected_color="#1f6aa5",
+            selected_hover_color="#144870"
+        )
+        self.seg_status.pack(fill="x", padx=20, pady=(5, 10))
+
+        # D. Keterangan
+        ctk.CTkLabel(self.sidebar, text="Keterangan (Opsional):", anchor="w").pack(fill="x", padx=20, pady=(5,0))
+        self.entry_ket = ctk.CTkEntry(self.sidebar, placeholder_text="...", height=40)
+        self.entry_ket.pack(fill="x", padx=20, pady=(5, 20))
+
+        # Tombol Simpan (Command nanti di-bind di main.py)
+        self.btn_save = ctk.CTkButton(
+            self.sidebar, 
+            text="SIMPAN MANUAL", 
+            fg_color="green", 
+            hover_color="darkgreen",
+            height=50,
+            font=("Arial", 15, "bold")
+        )
+        self.btn_save.pack(fill="x", padx=20, pady=10)
+
+        # Info Antrian
+        self.lbl_queue = ctk.CTkLabel(self.sidebar, text="Antrian Upload: 0", text_color="gray")
+        self.lbl_queue.pack(side="bottom", pady=20)
+
+    def setup_main_area(self):
+        self.main_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+        
+        self.main_frame.grid_rowconfigure(0, weight=2) 
+        self.main_frame.grid_rowconfigure(1, weight=0) 
+        self.main_frame.grid_rowconfigure(2, weight=1)
+        self.main_frame.grid_columnconfigure(0, weight=1)
+
+        # --- AREA KAMERA (Menggunakan TKINTER LABEL AGAR STABIL) ---
+        self.camera_box = ctk.CTkFrame(self.main_frame, fg_color="black")
+        self.camera_box.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
+        self.camera_box.grid_propagate(False)
+
+        # Widget Kamera Utama
+        self.lbl_camera = tk.Label(self.camera_box, bg="black", text="Kamera Mati", fg="gray", font=("Arial", 12))
+        self.lbl_camera.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Tombol Kamera
+        self.btn_cam = ctk.CTkButton(
+            self.main_frame, 
+            text="NYALAKAN KAMERA", 
+            height=40,
+            font=("Arial", 14, "bold")
+        )
+        self.btn_cam.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+
+        # --- AREA LOG ---
+        self.log_container = ctk.CTkFrame(self.main_frame)
+        self.log_container.grid(row=2, column=0, sticky="nsew")
+        
+        header_log = ctk.CTkFrame(self.log_container, height=30, corner_radius=0, fg_color="#2b2b2b")
+        header_log.pack(fill="x")
+        ctk.CTkLabel(header_log, text="  RIWAYAT AKTIVITAS SYSTEM (LIVE)", font=("Consolas", 12, "bold"), text_color="#00ff00").pack(side="left")
+
+        self.log_box = ctk.CTkTextbox(self.log_container, font=("Consolas", 14), activate_scrollbars=True, fg_color="#1a1a1a", text_color="#e0e0e0")
+        self.log_box.pack(fill="both", expand=True, padx=2, pady=2)
