@@ -3,11 +3,19 @@ from datetime import datetime
 import time
 import sys
 import traceback
-# Pastikan file config.py ada
+
+# --- IMPORT CONFIGURASI ---
 try:
-    from config import SPREADSHEET_ID
+    from config import (
+        SPREADSHEET_ID, 
+        SHEET_JAMAAH, 
+        SHEET_JADWAL, 
+        SHEET_USERS, 
+        SHEET_LOG
+    )
 except ImportError:
-    SPREADSHEET_ID = "MASUKKAN_ID_SPREADSHEET_DISINI"
+    print("❌ ERROR: File config.py tidak ditemukan atau variabel kurang lengkap!")
+    sys.exit()
 
 CREDENTIALS_FILE = "credentials.json"
 
@@ -32,7 +40,7 @@ def get_jamaah_by_id(id_jamaah):
     sh = connect_db()
     if not sh: return None
     try:
-        wks = sh.worksheet("MASTER_JAMAAH")
+        wks = sh.worksheet(SHEET_JAMAAH) # Pakai variable dari config
         data = wks.get_all_records()
         for j in data:
             if str(j.get('id_jamaah')) == str(id_jamaah):
@@ -47,7 +55,7 @@ def update_cache_jadwal():
     sh = connect_db()
     if sh:
         try:
-            wks = sh.worksheet("JADWAL")
+            wks = sh.worksheet(SHEET_JADWAL) # Pakai variable dari config
             CACHE_JADWAL = wks.get_all_records()
             LAST_JADWAL_UPDATE = time.time()
             print(f"✅ Jadwal diperbarui: {len(CACHE_JADWAL)} aturan.")
@@ -107,7 +115,7 @@ def get_all_jamaah_dict():
     sh = connect_db()
     if not sh: return {}
     try:
-        wks = sh.worksheet("MASTER_JAMAAH")
+        wks = sh.worksheet(SHEET_JAMAAH) # Pakai variable dari config
         data = wks.get_all_records()
         
         cache_data = {}
@@ -144,7 +152,7 @@ def input_absensi(id_jamaah, status_kehadiran, keterangan_input="", kegiatan_ove
         nama_sesi = kegiatan_override if kegiatan_override else "Kegiatan Umum"
         
         # LOGIC ANTI DUPLIKAT (Cek Log Hari Ini)
-        wks_log = sh.worksheet("LOG_ABSENSI")
+        wks_log = sh.worksheet(SHEET_LOG) # Pakai variable dari config
         now = datetime.now()
         tgl_skrg = now.strftime("%Y-%m-%d")
         
@@ -177,6 +185,7 @@ def input_absensi(id_jamaah, status_kehadiran, keterangan_input="", kegiatan_ove
     except Exception as e:
         print(f"❌ Gagal simpan: {e}")
         return False
+
 def cek_login(username, password):
     """
     Mengembalikan data user (Role & Scope) jika login sukses.
@@ -186,7 +195,7 @@ def cek_login(username, password):
     if not sh: return None
     
     try:
-        wks = sh.worksheet("USERS")
+        wks = sh.worksheet(SHEET_USERS) # Pakai variable dari config
         users = wks.get_all_records() 
         
         print(f"DEBUG: Mencoba login user: {username}...")
