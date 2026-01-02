@@ -84,20 +84,25 @@ class AbsensiApp(ctk.CTk):
         self.title("Sistem Absensi Jamaah LDII - LOGIN")
         self.geometry("400x500") 
 
-        # Session & System Variables
+        # Session Variables
         self.user_session = None 
+        
+        # System Variables
         self.cap = None
         self.is_camera_on = False
         self.last_scan_time = 0
         self.upload_queue = queue.Queue()
         self.local_cache = {} 
         self.history_absen_sesi = set() 
+        
+        # --- TAMBAHAN BARU: Variabel untuk melacak jendela popup ---
+        self.popup_window = None 
+        # -----------------------------------------------------------
 
-        # Start Threads (Sekali saja saat app mulai)
+        # Start Threads
         threading.Thread(target=self.load_cache_awal, daemon=True).start()
         threading.Thread(target=self.worker_uploader, daemon=True).start()
 
-        # Tampilkan Login
         self.show_login_screen()
 
     # --- BAGIAN LOGIN ---
@@ -225,10 +230,21 @@ class AbsensiApp(ctk.CTk):
                 pass 
 
     def buka_popup_cari(self):
+        # 1. Cek apakah data jamaah sudah siap
         if not self.local_cache:
             self.log("Data Jamaah belum dimuat!", "error")
             return
-        SearchPopup(self, self.local_cache, self.hasil_pencarian_dipilih, self.user_session)
+        
+        # 2. LOGIKA ANTI DUPLIKAT WINDOW
+        # Cek apakah popup_window sudah ada isinya DAN jendelanya masih eksis (belum di-close 'X')
+        if self.popup_window is not None and self.popup_window.winfo_exists():
+            # Jika sudah ada, angkat ke depan (focus) saja, jangan bikin baru
+            self.popup_window.lift()
+            self.popup_window.focus()
+            return
+
+        # 3. Jika belum ada, buat baru dan simpan ke variabel self.popup_window
+        self.popup_window = SearchPopup(self, self.local_cache, self.hasil_pencarian_dipilih, self.user_session)
 
     def hasil_pencarian_dipilih(self, uid_dipilih):
         self.ui.entry_id.delete(0, "end")
