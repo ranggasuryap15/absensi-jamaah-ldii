@@ -177,3 +177,37 @@ def input_absensi(id_jamaah, status_kehadiran, keterangan_input="", kegiatan_ove
     except Exception as e:
         print(f"❌ Gagal simpan: {e}")
         return False
+
+def cek_login(email, password):
+    """
+    Mengembalikan data user (Role & Scope) jika login sukses.
+    Return None jika gagal.
+    """
+    sh = connect_db()
+    if not sh: return None
+    
+    try:
+        wks = sh.worksheet("USERS") # Pastikan nama sheet benar 'USERS' atau 'users'
+        users = wks.get_all_records() 
+        
+        print(f"DEBUG: Mencoba login dengan {email}...") # Debugging bantu cek
+
+        for u in users:
+            # --- UPDATE: GUNAKAN HURUF KECIL SESUAI JUDUL KOLOM DI SHEET ---
+            db_email = str(u.get('email')).strip()    # Ganti 'Email' jadi 'email'
+            db_pass  = str(u.get('password')).strip() # Ganti 'Password' jadi 'password'
+            
+            # Cek kecocokan
+            if db_email == email.strip() and db_pass == password.strip():
+                print("DEBUG: Login Sukses!")
+                return {
+                    "role": u.get('role'),   # Ganti 'Role' jadi 'role'
+                    "scope": u.get('scope'), # Ganti 'Scope' jadi 'scope'
+                    "email": db_email
+                }
+        
+        print("DEBUG: Tidak ada email/password yang cocok.")
+        return None 
+    except Exception as e:
+        print(f"❌ Error Login: {e}")
+        return None
