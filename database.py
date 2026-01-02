@@ -177,8 +177,7 @@ def input_absensi(id_jamaah, status_kehadiran, keterangan_input="", kegiatan_ove
     except Exception as e:
         print(f"❌ Gagal simpan: {e}")
         return False
-
-def cek_login(email, password):
+def cek_login(username, password):
     """
     Mengembalikan data user (Role & Scope) jika login sukses.
     Return None jika gagal.
@@ -187,26 +186,30 @@ def cek_login(email, password):
     if not sh: return None
     
     try:
-        wks = sh.worksheet("USERS") # Pastikan nama sheet benar 'USERS' atau 'users'
+        wks = sh.worksheet("USERS")
         users = wks.get_all_records() 
         
-        print(f"DEBUG: Mencoba login dengan {email}...") # Debugging bantu cek
+        print(f"DEBUG: Mencoba login user: {username}...")
 
         for u in users:
-            # --- UPDATE: GUNAKAN HURUF KECIL SESUAI JUDUL KOLOM DI SHEET ---
-            db_email = str(u.get('email')).strip()    # Ganti 'Email' jadi 'email'
-            db_pass  = str(u.get('password')).strip() # Ganti 'Password' jadi 'password'
+            # Ambil data dari sheet (Pastikan judul kolom di sheet adalah 'username' atau 'Username')
+            # Kita paksa jadi string dan huruf kecil biar pencarian tidak case-sensitive
+            db_user = str(u.get('username') or u.get('Username')).strip().lower()
+            db_pass = str(u.get('password') or u.get('Password')).strip()
+            
+            input_user = username.strip().lower()
+            input_pass = password.strip()
             
             # Cek kecocokan
-            if db_email == email.strip() and db_pass == password.strip():
+            if db_user == input_user and db_pass == input_pass:
                 print("DEBUG: Login Sukses!")
                 return {
-                    "role": u.get('role'),   # Ganti 'Role' jadi 'role'
-                    "scope": u.get('scope'), # Ganti 'Scope' jadi 'scope'
-                    "email": db_email
+                    "role": u.get('role') or u.get('Role'),
+                    "scope": u.get('scope') or u.get('Scope'),
+                    "username": db_user
                 }
         
-        print("DEBUG: Tidak ada email/password yang cocok.")
+        print("DEBUG: Username/Password salah.")
         return None 
     except Exception as e:
         print(f"❌ Error Login: {e}")

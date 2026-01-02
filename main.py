@@ -107,7 +107,7 @@ class AbsensiApp(ctk.CTk):
 
     # --- BAGIAN LOGIN ---
     def show_login_screen(self):
-        # Bersihkan container jika ada sisa widget
+        # Bersihkan container
         for widget in self.winfo_children():
             widget.destroy()
 
@@ -116,8 +116,10 @@ class AbsensiApp(ctk.CTk):
 
         ctk.CTkLabel(self.login_frame, text="🔐 LOGIN ADMIN", font=("Arial", 24, "bold")).pack(pady=(40, 20))
 
-        self.entry_email = ctk.CTkEntry(self.login_frame, placeholder_text="Email", width=300)
-        self.entry_email.pack(pady=10)
+        # UBAH DISINI: Placeholder jadi Username
+        self.entry_username = ctk.CTkEntry(self.login_frame, placeholder_text="Username", width=300)
+        self.entry_username.pack(pady=10)
+        self.entry_username.focus_set() # Langsung fokus kursor kesini
 
         self.entry_pass = ctk.CTkEntry(self.login_frame, placeholder_text="Password", show="*", width=300)
         self.entry_pass.pack(pady=10)
@@ -130,27 +132,29 @@ class AbsensiApp(ctk.CTk):
         self.lbl_msg.pack()
 
     def proses_login(self, event):
-        email = self.entry_email.get()
+        # UBAH DISINI: Ambil data dari entry_username
+        user = self.entry_username.get()
         pwd = self.entry_pass.get()
         
-        # Safe Update UI
         try:
             self.lbl_msg.configure(text="Sedang memeriksa...", text_color="yellow")
             self.update()
         except: pass
 
         try:
-            user_data = db.cek_login(email, pwd)
+            # Panggil fungsi cek_login yang baru
+            user_data = db.cek_login(user, pwd)
+            
             if user_data:
                 self.user_session = user_data
-                self.title(f"Absensi - {user_data['role'].upper()} ({user_data['scope']})")
+                # Tampilkan info login di Title Bar
+                self.title(f"Absensi - {user_data['username']} | {user_data['role'].upper()} ({user_data['scope']})")
                 
-                # Hapus Login Screen & Load Main App
                 self.login_frame.destroy()
                 self.geometry("1100x700") 
                 self.init_main_app()
             else:
-                try: self.lbl_msg.configure(text="Email atau Password Salah!", text_color="red")
+                try: self.lbl_msg.configure(text="Username atau Password Salah!", text_color="red")
                 except: pass
         except Exception as e:
             try: self.lbl_msg.configure(text=f"Error DB: {e}", text_color="red")
@@ -175,9 +179,9 @@ class AbsensiApp(ctk.CTk):
         
         # Hapus frame utama (UI) jika ada
         if hasattr(self, 'ui') and hasattr(self.ui, 'main_frame'):
-             try: self.ui.main_frame.destroy() # Hapus container UI
-             except: pass
-             del self.ui # Hapus object UI dari memory
+            try: self.ui.main_frame.destroy() # Hapus container UI
+            except: pass
+            del self.ui # Hapus object UI dari memory
 
         # 4. Hapus sisa widget (Brute Force Cleanup)
         for widget in self.winfo_children():
