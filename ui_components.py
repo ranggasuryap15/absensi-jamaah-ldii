@@ -27,18 +27,17 @@ class MainUI:
         self.entry_id = ctk.CTkEntry(self.sidebar, placeholder_text="Scan / Ketik...", height=40, font=("Arial", 14))
         self.entry_id.pack(fill="x", padx=20, pady=(5, 10))
 
-        # # B. Kegiatan (Auto)
-        # ctk.CTkLabel(self.sidebar, text="Kegiatan (Auto Jadwal):", anchor="w").pack(fill="x", padx=20, pady=(5,0))
-        # self.entry_kegiatan = ctk.CTkEntry(
-        #     self.sidebar,
-        #     placeholder_text="Memuat Jadwal...",
-        #     height=40,
-        #     font=("Arial", 13, "bold"),
-        #     fg_color="#2b2b2b", # Read Only Style
-        #     text_color="#ffd700"
-        # )
-        # self.entry_kegiatan.pack(fill="x", padx=20, pady=(5, 10))
-        # self.entry_kegiatan.configure(state="disabled")
+        # B. SEARCH 
+        self.btn_cari = ctk.CTkButton(
+            self.entry_id.master,  # <--- GANTI JADI INI (Otomatis ikut frame input ID)
+            text="🔍 CARI NAMA (F2)",
+            font=("Arial", 12, "bold"),
+            fg_color="#E67E22",
+            hover_color="#D35400",
+            height=30,
+            cursor="hand2"
+        )
+        self.btn_cari.pack(pady=(5, 15))
 
         # C. Status
         ctk.CTkLabel(self.sidebar, text="Status Kehadiran:", anchor="w").pack(fill="x", padx=20, pady=(5,0))

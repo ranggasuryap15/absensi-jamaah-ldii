@@ -21,11 +21,16 @@ class AbsensiApp(ctk.CTk):
         self.geometry("1100x700") 
 
         # 1. LOAD TAMPILAN
-        self.ui = ui.MainUI(self)
+        self.ui = ui.MainUI(self) # Load UI
 
-        # 2. SAMBUNGKAN LOGIC
+        # === UPDATE BINDING TOMBOL ===
         self.ui.btn_save.configure(command=self.simpan_data)
         self.ui.btn_cam.configure(command=self.toggle_camera)
+        
+        # Tombol Cari Nama & Shortcut Keyboard F2
+        self.ui.btn_cari.configure(command=self.buka_popup_cari)
+        self.bind("<F2>", lambda event: self.buka_popup_cari()) 
+        
         self.ui.entry_id.bind("<Return>", self.on_enter_pressed)
 
         # --- BAGIAN CONFIG KEGIATAN DIHAPUS TOTAL DISINI ---
@@ -54,7 +59,20 @@ class AbsensiApp(ctk.CTk):
         if tipe == "scan":    simbol = "[SCAN]"
         
         self.ui.log_box.insert("0.0", f"{waktu} {simbol} : {pesan}\n")
+    def buka_popup_cari(self):
+        if not self.local_cache:
+            self.log("Data Jamaah belum dimuat!", "error")
+            return
+            
+        # Buka Popup
+        SearchPopup(self, self.local_cache, self.hasil_pencarian_dipilih)
 
+    def hasil_pencarian_dipilih(self, uid_dipilih):
+        self.ui.entry_id.delete(0, "end")
+        self.ui.entry_id.insert(0, uid_dipilih)
+        self.log(f"Manual Input: ID {uid_dipilih}", "info")
+        self.simpan_data()
+        
     def toggle_camera(self):
         if not self.is_camera_on:
             try:
@@ -201,6 +219,69 @@ class AbsensiApp(ctk.CTk):
         self.history_absen_sesi.add(kunci_unik)
         self.upload_queue.put((uid, status, ket, kegiatan_saat_ini, time.time()))
         self.ui.lbl_queue.configure(text=f"Antrian Upload: {self.upload_queue.qsize()}")
+
+class SearchPopup(ctk.CTkToplevel):
+    def __init__(self, parent, data_jamaah, on_select_callback):
+        super().__init__(parent)
+        self.data_jamaah = data_jamaah # Data dari local_cache
+        self.on_select = on_select_callback
+        
+        self.title("Cari Nama Jamaah")
+        self.geometry("500x600")
+        self.attributes("-topmost", True) # Supaya selalu di depan
+        
+        # Judul
+        self.lbl_title = ctk.CTkLabel(self, text="Ketik Nama Jamaah:", font=("Arial", 16, "bold"))
+        self.lbl_title.pack(pady=10)
+
+        # Input Search
+        self.entry_search = ctk.CTkEntry(self, font=("Arial", 14), placeholder_text="Contoh: Budi...")
+        self.entry_search.pack(fill="x", padx=20, pady=(0, 10))
+        self.entry_search.bind("<KeyRelease>", self.filter_data) # Live Search
+        self.entry_search.focus_set()
+
+        # Scrollable Frame untuk Hasil
+        self.scroll_frame = ctk.CTkScrollableFrame(self)
+        self.scroll_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        self.list_buttons = []
+        self.filter_data(None) # Tampilkan awal (kosong/semua)
+
+    def filter_data(self, event):
+        keyword = self.entry_search.get().lower()
+        
+        # Bersihkan hasil sebelumnya
+        for btn in self.list_buttons:
+            btn.destroy()
+        self.list_buttons.clear()
+
+        # Filter logic (Mencari di local cache)
+        count = 0
+        for uid, info in self.data_jamaah.items():
+            nama = info['nama']
+            # Jika keyword ada di nama (atau kosong tampilkan 20 pertama aja biar gak lag)
+            if keyword in nama.lower():
+                text_tampil = f"{nama} - {info.get('desa', '-')} ({info.get('kelompok', '-')})"
+                
+                btn = ctk.CTkButton(
+                    self.scroll_frame, 
+                    text=text_tampil, 
+                    anchor="w",
+                    fg_color="transparent", 
+                    text_color="white",
+                    border_width=1,
+                    border_color="#333",
+                    command=lambda u=uid: self.pilih_jamaah(u)
+                )
+                btn.pack(fill="x", pady=2)
+                self.list_buttons.append(btn)
+                
+                count += 1
+                if count >= 50: break # Batasi 50 hasil biar gak berat
+
+    def pilih_jamaah(self, uid):
+        self.on_select(uid)
+        self.destroy()
 
 if __name__ == "__main__":
     app = AbsensiApp()
